@@ -47,6 +47,24 @@ public class QTable
         WriteFile();
     }
 
+    public void Add(QTableState state, QTableReward reward)
+    {
+        if(qTable.ContainsKey(state))
+            qTable[state] = reward;
+        else
+            qTable.Add(state, reward);
+    }
+
+    public void DebugPrintTableInfo()
+    {
+        foreach (var entry in qTable)
+        {
+            string stateString = entry.Key.CSVGetData();
+            string valueString = entry.Value.CSVGetData();
+            Debug.Log($"{stateString} {valueString}");
+        }
+    }
+
     #endregion
 
     #region PrivateMethods
