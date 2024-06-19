@@ -39,6 +39,7 @@ namespace QMind
         INavigationAlgorithm navigationAlgorithm;
 
         private int currentEpisode;
+        private int currentStep;
 
         private QTable qTable;
 
@@ -46,12 +47,12 @@ namespace QMind
 
         #region PublicVariables
 
-        public int CurrentEpisode { get; }
-        public int CurrentStep { get; }
+        public int CurrentEpisode { get { return currentEpisode; } }
+        public int CurrentStep { get { return currentStep; } }
         public CellInfo AgentPosition { get; private set; }
         public CellInfo OtherPosition { get; private set; }
-        public float Return { get; }
-        public float ReturnAveraged { get; }
+        public float Return { get { return 0; } }
+        public float ReturnAveraged { get { return 1; } }
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
 
@@ -65,6 +66,8 @@ namespace QMind
             this.navigationAlgorithm.Initialize(this.worldInfo);
 
             this.qTable = new QTable();
+
+            qTable.SaveTable();
 
             Debug.Log("QMindTrainerDummy: initialized");
 
@@ -80,7 +83,21 @@ namespace QMind
             var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
             if(path != null && path.Length > 0) OtherPosition = path[0];
 
+            QTableState state = new QTableState(
+                worldInfo.NextCell(AgentPosition, Directions.Up).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Right).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Down).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Left).Walkable,
+                false,
+                false,
+                false,
+                false,
+                0
+            );
+
             AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
+
+            ++this.currentStep;
         }
 
         private void StartEpisode(int episodeIdx)
