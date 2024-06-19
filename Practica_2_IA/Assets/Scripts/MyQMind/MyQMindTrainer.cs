@@ -32,6 +32,16 @@ namespace QMind
 {
     public class MyQMindTrainer : IQMindTrainer
     {
+        #region PrivateVariables
+
+        private WorldInfo worldInfo;
+
+        private int currentEpisode;
+
+        #endregion
+
+        #region PublicVariables
+
         public int CurrentEpisode { get; }
         public int CurrentStep { get; }
         public CellInfo AgentPosition { get; private set; }
@@ -40,18 +50,32 @@ namespace QMind
         public float ReturnAveraged { get; }
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
-        
+
+        #endregion
+
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
+            this.worldInfo = worldInfo;
+
+            StartEpisode(0);
+
             Debug.Log("QMindTrainerDummy: initialized");
-            AgentPosition = worldInfo.RandomCell();
-            OtherPosition = worldInfo.RandomCell();
-            OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
         }
 
         public void DoStep(bool train)
         {
             Debug.Log("QMindTrainerDummy: DoStep");
+
+            AgentPosition = worldInfo.RandomCell();
         }
+
+        private void StartEpisode(int episodeIdx)
+        {
+            currentEpisode = episodeIdx;
+            AgentPosition = worldInfo.RandomCell();
+            OtherPosition = worldInfo.RandomCell();
+            OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
+        }
+
     }
 }

@@ -30,8 +30,12 @@ namespace QMind
 {
     public class MyQMindTester : IQMind
     {
+        private WorldInfo worldInfo;
+
         public void Initialize(WorldInfo worldInfo)
         {
+            this.worldInfo = worldInfo;
+
             Debug.Log("QMindDummy: initialized");
         }
 
