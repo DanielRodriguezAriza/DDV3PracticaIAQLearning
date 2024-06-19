@@ -22,7 +22,7 @@ public class QTable
     public QTable(string filename = "QTable.csv")
     {
         this.qTable = new Dictionary<QTableState, QTableReward>();
-        this.filePath = $"{Application.dataPath}/QLearningData";
+        this.filePath = $"{Application.dataPath}";
         this.fileName = filename;
     }
 
@@ -37,11 +37,13 @@ public class QTable
 
     public void LoadTable()
     {
+        Debug.Log($"Loaded QTable from path \"{GetFileName()}\"");
         ReadFile();
     }
 
     public void SaveTable()
     {
+        Debug.Log($"Saved QTable to path \"{GetFileName()}\"");
         WriteFile();
     }
 
@@ -54,14 +56,20 @@ public class QTable
         string filename = GetFileName();
         StreamReader reader = new StreamReader(filePath);
 
-        string csvLine = reader.ReadLine();
-        string[] dataStrings = csvLine.Split(csvSeparators);
+        string csvLine;
 
-        QTableState state = new QTableState();
-        state.CSVSetData(dataStrings, 0);
+        while ((csvLine = reader.ReadLine()) != null)
+        {
+            string[] dataStrings = csvLine.Split(csvSeparators);
 
-        QTableReward reward = new QTableReward();
-        reward.CSVSetData(dataStrings, state.CSVGetNumElements());
+            QTableState state = new QTableState();
+            state.CSVSetData(dataStrings, 0);
+
+            QTableReward reward = new QTableReward();
+            reward.CSVSetData(dataStrings, state.CSVGetNumElements());
+
+            qTable.Add(state, reward);
+        }
 
         reader.Close();
     }
