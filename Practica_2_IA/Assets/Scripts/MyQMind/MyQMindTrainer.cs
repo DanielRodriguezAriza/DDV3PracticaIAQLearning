@@ -78,7 +78,9 @@ namespace QMind
         {
             //Debug.Log("QMindTrainerDummy: DoStep");
 
-            Debug.Log($"{qTable.GetFileName()}");
+            //Debug.Log($"{qTable.GetFileName()}");
+
+            //Debug.Log($"max steps : {qMindTrainerParams.maxSteps}");
 
             var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
             if(path != null && path.Length > 0) OtherPosition = path[0];
@@ -95,11 +97,18 @@ namespace QMind
                 0
             );
 
+            QTableReward reward = new QTableReward(
+                UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
+            );
+
             AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
+
+            qTable.Add(state, reward);
+            //qTable.DebugPrintTableInfo();
 
             ++this.currentStep;
 
-            if (currentStep > qMindTrainerParams.maxSteps)
+            if (qMindTrainerParams.maxSteps >= 0 && currentStep > qMindTrainerParams.maxSteps) // -1 means infinite max steps.
             {
                 NextEpisode();
             }
@@ -112,6 +121,13 @@ namespace QMind
             OtherPosition = worldInfo.RandomCell();
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
             this.currentStep = 0;
+
+            int val = currentEpisode % qMindTrainerParams.episodesBetweenSaves;
+            Debug.Log($"val : {val}");
+            if (currentEpisode % qMindTrainerParams.episodesBetweenSaves == 0)
+            {
+                qTable.SaveTable();
+            }
         }
 
         private void NextEpisode()
