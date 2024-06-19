@@ -2,7 +2,14 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public struct QTableState
+public enum QTableDistances
+{
+    Close = 0,
+    Middle = 1,
+    Far = 2
+}
+
+public struct QTableState : ICSVConvertible
 {
     public bool NorthIsWalkable;
     public bool EastIsWalkable;
@@ -14,9 +21,9 @@ public struct QTableState
     public bool EnemyIsSouth;
     public bool EnemyIsWest;
     
-    public float EnemyDistance;
+    public QTableDistances EnemyDistance;
 
-    public QTableState(bool northWalkable = true, bool eastWalkable = true, bool southWalkable = true, bool westWalkable = true, bool enemyIsNorth = true, bool enemyIsEast = true, bool enemyIsSouth = true, bool enemyIsWest = true, float distance = 0.0f)
+    public QTableState(bool northWalkable = true, bool eastWalkable = true, bool southWalkable = true, bool westWalkable = true, bool enemyIsNorth = true, bool enemyIsEast = true, bool enemyIsSouth = true, bool enemyIsWest = true, QTableDistances distance = QTableDistances.Close)
     {
         this.NorthIsWalkable = northWalkable;
         this.EastIsWalkable = eastWalkable;
@@ -31,17 +38,72 @@ public struct QTableState
         this.EnemyDistance = distance;
     }
 
-    public string GetStringCSV()
+    public string CSVGetData(char separator = ';')
     {
-        string str = $"{NorthIsWalkable}; {EastIsWalkable}; {SouthIsWalkable}; {WestIsWalkable}; {EnemyIsNorth}; {EnemyIsEast}; {EnemyIsSouth}; {EnemyIsWest}; {EnemyDistance}";
-        return str;
+        return $"{NorthIsWalkable}{separator} {EastIsWalkable}{separator} {SouthIsWalkable}{separator} {WestIsWalkable}{separator} {EnemyIsNorth}{separator} {EnemyIsEast}{separator} {EnemyIsSouth}{separator} {EnemyIsWest}{separator} {(int)EnemyDistance}{separator}";
+    }
+
+    public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0)
+    {
+        string[] dataStrings = csvLine.Split(csvSeparators);
+        CSVSetData(dataStrings, offset);
+    }
+
+    public void CSVSetData(string[] dataStrings, int offset = 0)
+    {
+        this.NorthIsWalkable = bool.Parse(dataStrings[offset + 0]);
+        this.EastIsWalkable  = bool.Parse(dataStrings[offset + 1]);
+        this.SouthIsWalkable = bool.Parse(dataStrings[offset + 2]);
+        this.WestIsWalkable  = bool.Parse(dataStrings[offset + 3]);
+        this.EnemyIsNorth    = bool.Parse(dataStrings[offset + 4]);
+        this.EnemyIsEast     = bool.Parse(dataStrings[offset + 5]);
+        this.EnemyIsWest     = bool.Parse(dataStrings[offset + 6]);
+        this.EnemyDistance   = (QTableDistances)int.Parse(dataStrings[offset + 7]);
+    }
+
+    public int CSVGetNumElements()
+    {
+        return 9;
     }
 }
 
-public enum QTableAction
+public struct QTableReward : ICSVConvertible
 {
-    MoveNorth,
-    MoveEast,
-    MoveSouth,
-    MoveWest
+    public float rewardNorth;
+    public float rewardEast;
+    public float rewardSouth;
+    public float rewardWest;
+
+    public QTableReward(float n, float e, float s, float w)
+    {
+        this.rewardNorth = n;
+        this.rewardEast = e;
+        this.rewardSouth = s;
+        this.rewardWest = w;
+    }
+
+    public string CSVGetData(char separator = ';')
+    {
+        return $"{rewardNorth}{separator} {rewardEast}{separator} {rewardSouth}{separator} {rewardWest}{separator}";
+    }
+
+    public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0)
+    {
+        string[] dataStrings = csvLine.Split(csvSeparators);
+        CSVSetData(dataStrings, offset);
+    }
+
+    public void CSVSetData(string[] dataStrings, int offset = 0)
+    {
+        this.rewardNorth = float.Parse(dataStrings[offset + 0]);
+        this.rewardEast  = float.Parse(dataStrings[offset + 1]);
+        this.rewardSouth = float.Parse(dataStrings[offset + 2]);
+        this.rewardWest  = float.Parse(dataStrings[offset + 3]);
+    }
+
+    public int CSVGetNumElements()
+    {
+        return 4;
+    }
+
 }

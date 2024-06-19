@@ -34,9 +34,13 @@ namespace QMind
     {
         #region PrivateVariables
 
+        QMindTrainerParams qMindTrainerParams;
         private WorldInfo worldInfo;
+        INavigationAlgorithm navigationAlgorithm;
 
         private int currentEpisode;
+
+        private QTable qTable;
 
         #endregion
 
@@ -55,18 +59,28 @@ namespace QMind
 
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
+            this.qMindTrainerParams = qMindTrainerParams;
             this.worldInfo = worldInfo;
+            this.navigationAlgorithm = navigationAlgorithm;
+            this.navigationAlgorithm.Initialize(this.worldInfo);
 
-            StartEpisode(0);
+            this.qTable = new QTable();
 
             Debug.Log("QMindTrainerDummy: initialized");
+
+            StartEpisode(0);
         }
 
         public void DoStep(bool train)
         {
-            Debug.Log("QMindTrainerDummy: DoStep");
+            //Debug.Log("QMindTrainerDummy: DoStep");
 
-            AgentPosition = worldInfo.RandomCell();
+            Debug.Log($"{qTable.GetFileName()}");
+
+            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
+            if(path != null && path.Length > 0) OtherPosition = path[0];
+
+            AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
         }
 
         private void StartEpisode(int episodeIdx)
@@ -75,6 +89,13 @@ namespace QMind
             AgentPosition = worldInfo.RandomCell();
             OtherPosition = worldInfo.RandomCell();
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
+        }
+
+        private Directions GetRandomDirection()
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            int dir = UnityEngine.Random.Range(0, 4);
+            return directions[dir];
         }
 
     }
