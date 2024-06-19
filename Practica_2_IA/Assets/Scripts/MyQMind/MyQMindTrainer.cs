@@ -98,6 +98,11 @@ namespace QMind
             AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
 
             ++this.currentStep;
+
+            if (currentStep > qMindTrainerParams.maxSteps)
+            {
+                NextEpisode();
+            }
         }
 
         private void StartEpisode(int episodeIdx)
@@ -106,6 +111,12 @@ namespace QMind
             AgentPosition = worldInfo.RandomCell();
             OtherPosition = worldInfo.RandomCell();
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
+            this.currentStep = 0;
+        }
+
+        private void NextEpisode()
+        {
+            StartEpisode(currentEpisode + 1);
         }
 
         private Directions GetRandomDirection()
