@@ -4,7 +4,7 @@
 PlayerSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 26
-  productGUID: 7d9355f8186b1c84b9c402cb38bc1e25
+  productGUID: bce5585c05a58024ba7303c66face1e7
   AndroidProfiler: 0
   AndroidFilterTouchesWhenObscured: 0
   AndroidEnableSustainedPerformanceMode: 0
@@ -13,7 +13,7 @@ PlayerSettings:
   useOnDemandResources: 0
   accelerometerFrequency: 60
   companyName: DefaultCompany
-  productName: PracticaIA2
+  productName: Practica_2_IA
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0.13725491, g: 0.12156863, b: 0.1254902, a: 1}
@@ -834,14 +834,14 @@ PlayerSettings:
   apiCompatibilityLevelPerPlatform: {}
   m_RenderingPath: 1
   m_MobileRenderingPath: 1
-  metroPackageName: PracticaIA2
+  metroPackageName: Practica_2_IA
   metroPackageVersion: 
   metroCertificatePath: 
   metroCertificatePassword: 
   metroCertificateSubject: 
   metroCertificateIssuer: 
   metroCertificateNotAfter: 0000000000000000
-  metroApplicationDescription: PracticaIA2
+  metroApplicationDescription: Practica_2_IA
   wsaImages: {}
   metroTileShortName: 
   metroTileShowName: 0
@@ -910,10 +910,10 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 0
   windowsGamepadBackendHint: 0
-  cloudProjectId: 2d41ed25-3a10-4e1e-8b6c-12f533f24c5b
+  cloudProjectId: 87b05b55-a5a4-4c13-8a63-a85eb16f1fd8
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: PracticaIA2
+  projectName: Practica_2_IA
   organizationId: xaviruso
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
