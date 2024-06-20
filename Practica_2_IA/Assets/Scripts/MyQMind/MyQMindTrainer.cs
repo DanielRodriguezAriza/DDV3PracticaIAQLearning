@@ -76,7 +76,7 @@ namespace QMind
 
             LoadQTable();
 
-            Debug.Log("QMindTrainerDummy: initialized");
+            Debug.Log("MyQMindTrainer: Initialized");
 
             StartEpisode(0);
         }
@@ -159,7 +159,7 @@ namespace QMind
                 qTable.GetQ(state, QTableAction.GoWest)
             };
             float maxValue = qValues[0];
-            float maxIndex = 0;
+            int maxIndex = 0;
             for (int i = 0; i < qValues.Length; ++i)
             {
                 if (qValues[i] > maxValue)
