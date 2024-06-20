@@ -90,7 +90,7 @@ namespace QMind
             QTableAction action = GetAction();
             float reward = GetReward();
 
-            MoveAgent();
+            MoveAgent(action);
 
             UpdateQTable(state, action, reward);
 
@@ -129,6 +129,13 @@ namespace QMind
         {
             Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
             int dir = UnityEngine.Random.Range(0, 4);
+            return directions[dir];
+        }
+
+        private Directions GetActionDirection(QTableAction action)
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            int dir = (int)action;
             return directions[dir];
         }
 
@@ -207,9 +214,13 @@ namespace QMind
             if (path != null && path.Length > 0) OtherPosition = path[0];
         }
 
-        private void MoveAgent()
+        private void MoveAgent(QTableAction action)
         {
-            AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
+            float n = UnityEngine.Random.Range(0.0f, 1.0f);
+            if(n <= qMindTrainerParams.epsilon)
+                AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
+            else
+                AgentPosition = worldInfo.NextCell(AgentPosition, GetActionDirection(action));
         }
 
         #endregion
