@@ -48,8 +48,8 @@ namespace QMind
             Debug.Log("MyQMindTester: GetNextStep");
             QTableState currentState = GetState(currentPosition, otherPosition);
             QTableAction bestAction = qTable.GetBestAction(currentState);
-            MoveAgent(currentPosition, bestAction);
-            return null;
+            CellInfo ans = MoveAgent(currentPosition, bestAction);
+            return ans;
         }
 
         private QTableState GetState(CellInfo cell, CellInfo other)
@@ -102,10 +102,12 @@ namespace QMind
             return QTableDistances.Close;
         }
 
-        private void MoveAgent(CellInfo cell, QTableAction action)
+        private CellInfo MoveAgent(CellInfo cell, QTableAction action)
         {
             Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
-            cell = worldInfo.NextCell(cell, directions[(int)action]);
+            CellInfo ans = worldInfo.NextCell(cell, directions[(int)action]);
+            ans = ans.Walkable ? ans : null;
+            return ans;
         }
     }
 }
