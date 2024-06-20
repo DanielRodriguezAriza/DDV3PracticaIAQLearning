@@ -5,8 +5,16 @@ using UnityEngine;
 public enum QTableDistances
 {
     Close = 0,
-    Middle = 1,
-    Far = 2
+    Middle,
+    Far
+}
+
+public enum QTableActions
+{
+    GoNorth = 0,
+    GoEast,
+    GoSouth,
+    GoWest
 }
 
 public struct QTableState : ICSVConvertible

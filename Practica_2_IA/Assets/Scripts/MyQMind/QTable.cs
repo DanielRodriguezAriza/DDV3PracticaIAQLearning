@@ -56,13 +56,56 @@ public class QTable
             qTable.Add(state, reward);
     }
 
-    public void DebugPrintTableInfo()
+    // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
+    public void UpdateQ(QTableState state, QTableActions action, float reward, float alpha, float gamma)
     {
-        foreach (var entry in qTable)
+        float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(state), alpha);
+        SetQ(state, action, newQ);
+    }
+
+    public float GetQ(QTableState state, QTableActions action)
+    {
+        switch (action)
         {
-            string stateString = entry.Key.CSVGetData();
-            string valueString = entry.Value.CSVGetData();
-            Debug.Log($"{stateString} {valueString}");
+            case QTableActions.GoNorth:
+                return qTable[state].rewardNorth;
+            case QTableActions.GoEast:
+                return qTable[state].rewardEast;
+            case QTableActions.GoSouth:
+                return qTable[state].rewardSouth;
+            case QTableActions.GoWest:
+                return qTable[state].rewardWest;
+            default:
+                return -1;
+        }
+    }
+
+    public float GetMaxQ(QTableState state)
+    {
+        float f1 = qTable[state].rewardNorth;
+        float f2 = qTable[state].rewardEast;
+        float f3 = qTable[state].rewardSouth;
+        float f4 = qTable[state].rewardWest;
+        return Mathf.Max(f1, f2, f3, f3);
+    }
+
+    public void SetQ(QTableState state, QTableActions action, float value)
+    {
+        QTableReward reward = qTable[state];
+        switch (action)
+        {
+            case QTableActions.GoNorth:
+                reward.rewardNorth = value;
+                break;
+            case QTableActions.GoEast:
+                reward.rewardEast = value;
+                break;
+            case QTableActions.GoSouth:
+                reward.rewardSouth = value;
+                break;
+            case QTableActions.GoWest:
+                reward.rewardWest = value;
+                break;
         }
     }
 
@@ -106,6 +149,20 @@ public class QTable
         }
 
         writer.Close();
+    }
+
+    #endregion
+
+    #region PublicDebugMethods
+
+    public void DebugPrintTableInfo()
+    {
+        foreach (var entry in qTable)
+        {
+            string stateString = entry.Key.CSVGetData();
+            string valueString = entry.Value.CSVGetData();
+            Debug.Log($"{stateString} {valueString}");
+        }
     }
 
     #endregion
