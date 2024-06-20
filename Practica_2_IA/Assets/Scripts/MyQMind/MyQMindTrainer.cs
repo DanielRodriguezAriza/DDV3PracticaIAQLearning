@@ -87,8 +87,8 @@ namespace QMind
             MovePlayer();
 
             QTableState state = GetState();
-            QTableAction action = GetAction();
-            float reward = GetReward();
+            QTableAction action = GetAction(state);
+            float reward = GetReward(state, action);
 
             MoveAgent(action);
 
@@ -138,6 +138,35 @@ namespace QMind
             int dir = (int)action;
             return directions[dir];
         }
+
+        private QTableAction GetRandomAction()
+        {
+            QTableAction[] actions = new QTableAction[4] { QTableAction.GoNorth, QTableAction.GoEast, QTableAction.GoSouth, QTableAction.GoWest};
+            int action = UnityEngine.Random.Range(0, 4);
+            return actions[action];
+        }
+
+        private QTableAction GetBestAction(QTableState state)
+        {
+            float[] qValues = new float[4] {
+                qTable.GetQ(state, QTableAction.GoNorth),
+                qTable.GetQ(state, QTableAction.GoEast),
+                qTable.GetQ(state, QTableAction.GoSouth),
+                qTable.GetQ(state, QTableAction.GoWest)
+            };
+            float maxValue = qValues[0];
+            float maxIndex = 0;
+            for (int i = 0; i < qValues.Length; ++i)
+            {
+                if (qValues[i] > maxValue)
+                {
+                    maxValue = qValues[i];
+                    maxIndex = i;
+                }
+            }
+            return (QTableAction)maxIndex;
+        }
+
 
         private void SaveQTable()
         {
@@ -226,15 +255,19 @@ namespace QMind
             }
         }
 
-        private QTableAction GetAction()
+        private QTableAction GetAction(QTableState state)
         {
-            QTableAction action = QTableAction.GoEast;
-            return action;
+            float n = UnityEngine.Random.Range(0.0f, 1.0f);
+
+            if (n <= qMindTrainerParams.epsilon)
+                return GetRandomAction();
+
+            return GetBestAction(state);
         }
 
-        private float GetReward()
+        private float GetReward(QTableState state, QTableAction action)
         {
-            return 0.0f;
+            return qTable.GetQ(state, action); // PLACEHOLDER, THIS IS OBVIOUSLY WRONG!!!!
         }
 
         private void UpdateQTable(QTableState state, QTableAction action, float reward)
@@ -250,11 +283,7 @@ namespace QMind
 
         private void MoveAgent(QTableAction action)
         {
-            float n = UnityEngine.Random.Range(0.0f, 1.0f);
-            if(n <= qMindTrainerParams.epsilon)
-                AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
-            else
-                AgentPosition = worldInfo.NextCell(AgentPosition, GetActionDirection(action));
+            AgentPosition = worldInfo.NextCell(AgentPosition, GetActionDirection(action));
         }
 
         #endregion
