@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 public enum QTableDistances
@@ -93,7 +94,7 @@ public struct QTableReward : ICSVConvertible
 
     public string CSVGetData(char separator = ';')
     {
-        return $"{rewardNorth}{separator} {rewardEast}{separator} {rewardSouth}{separator} {rewardWest}{separator}";
+        return $"{rewardNorth.ToString(CultureInfo.InvariantCulture)}{separator} {rewardEast.ToString(CultureInfo.InvariantCulture)}{separator} {rewardSouth.ToString(CultureInfo.InvariantCulture)}{separator} {rewardWest.ToString(CultureInfo.InvariantCulture)}{separator}";
     }
 
     public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0)
@@ -104,10 +105,10 @@ public struct QTableReward : ICSVConvertible
 
     public void CSVSetData(string[] dataStrings, int offset = 0)
     {
-        this.rewardNorth = float.Parse(dataStrings[offset + 0]);
-        this.rewardEast  = float.Parse(dataStrings[offset + 1]);
-        this.rewardSouth = float.Parse(dataStrings[offset + 2]);
-        this.rewardWest  = float.Parse(dataStrings[offset + 3]);
+        this.rewardNorth = float.Parse(dataStrings[offset + 0], CultureInfo.InvariantCulture);
+        this.rewardEast  = float.Parse(dataStrings[offset + 1], CultureInfo.InvariantCulture);
+        this.rewardSouth = float.Parse(dataStrings[offset + 2], CultureInfo.InvariantCulture);
+        this.rewardWest  = float.Parse(dataStrings[offset + 3], CultureInfo.InvariantCulture);
     }
 
     public int CSVGetNumElements()
