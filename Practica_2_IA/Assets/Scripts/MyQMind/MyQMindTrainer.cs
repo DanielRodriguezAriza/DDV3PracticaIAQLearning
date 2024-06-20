@@ -157,10 +157,10 @@ namespace QMind
         private QTableState GetState(CellInfo cell)
         {
             QTableState state = new QTableState(
-                worldInfo.NextCell(AgentPosition, Directions.Up).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Right).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Down).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Left).Walkable,
+                worldInfo.NextCell(cell, Directions.Up).Walkable,
+                worldInfo.NextCell(cell, Directions.Right).Walkable,
+                worldInfo.NextCell(cell, Directions.Down).Walkable,
+                worldInfo.NextCell(cell, Directions.Left).Walkable,
                 false,
                 false,
                 false,
