@@ -87,27 +87,13 @@ namespace QMind
             var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
             if(path != null && path.Length > 0) OtherPosition = path[0];
 
-            QTableState state = new QTableState(
-                worldInfo.NextCell(AgentPosition, Directions.Up).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Right).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Down).Walkable,
-                worldInfo.NextCell(AgentPosition, Directions.Left).Walkable,
-                false,
-                false,
-                false,
-                false,
-                0
-            );
+            QTableState state = GetState();
 
-            QTableReward reward = new QTableReward(
-                //UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
-                1.0f, 2.0f, 3.0f, 4.0f
-            );
+            QTableReward reward = GetReward();
 
             AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
 
-            qTable.Add(state, reward);
-            //qTable.DebugPrintTableInfo();
+            UpdateQTable(state, reward);
 
             ++this.currentStep;
 
@@ -160,6 +146,38 @@ namespace QMind
             qTable.LoadTable();
             //qTable.DebugPrintTableInfo();
         }
+
+
+        private QTableState GetState()
+        {
+            QTableState state = new QTableState(
+                worldInfo.NextCell(AgentPosition, Directions.Up).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Right).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Down).Walkable,
+                worldInfo.NextCell(AgentPosition, Directions.Left).Walkable,
+                false,
+                false,
+                false,
+                false,
+                0
+            );
+            return state;
+        }
+
+        private QTableReward GetReward()
+        {
+            QTableReward reward = new QTableReward(
+                //UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
+                1.0f, 2.0f, 3.0f, 4.0f
+            );
+            return reward;
+        }
+
+        private void UpdateQTable(QTableState state, QTableReward reward)
+        {
+            qTable.Add(state, reward);
+        }
+
 
         #endregion
 
