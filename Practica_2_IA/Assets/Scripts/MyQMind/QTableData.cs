@@ -57,8 +57,9 @@ public struct QTableState : ICSVConvertible
         this.WestIsWalkable  = bool.Parse(dataStrings[offset + 3]);
         this.EnemyIsNorth    = bool.Parse(dataStrings[offset + 4]);
         this.EnemyIsEast     = bool.Parse(dataStrings[offset + 5]);
-        this.EnemyIsWest     = bool.Parse(dataStrings[offset + 6]);
-        this.EnemyDistance   = (QTableDistances)int.Parse(dataStrings[offset + 7]);
+        this.EnemyIsSouth    = bool.Parse(dataStrings[offset + 6]);
+        this.EnemyIsWest     = bool.Parse(dataStrings[offset + 7]);
+        this.EnemyDistance   = (QTableDistances)int.Parse(dataStrings[offset + 8]);
     }
 
     public int CSVGetNumElements()
