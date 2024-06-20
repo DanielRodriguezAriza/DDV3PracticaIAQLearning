@@ -89,22 +89,21 @@ namespace QMind
 
             //Debug.Log($"max steps : {qMindTrainerParams.maxSteps}");
 
-            MovePlayer();
-
             QTableState state = GetState();
             QTableAction action = GetAction(state);
             float reward = GetReward(state, action);
 
-            MoveAgent(action);
-
             UpdateQTable(state, action, reward);
 
-            ++this.currentStep;
-
-            if (qMindTrainerParams.maxSteps >= 0 && currentStep > qMindTrainerParams.maxSteps) // -1 means infinite max steps.
+            if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < 0) // -1 means infinite max steps.
             {
                 NextEpisode();
             }
+
+            MovePlayer();
+            MoveAgent(action);
+
+            ++this.currentStep;
         }
 
         #endregion
@@ -184,7 +183,7 @@ namespace QMind
         private void LoadQTable()
         {
             qTable.LoadTable();
-            //qTable.DebugPrintTableInfo();
+            qTable.DebugPrintTableInfo();
         }
 
 
@@ -279,7 +278,9 @@ namespace QMind
                 (!state.WestIsWalkable && action == QTableAction.GoWest)
                 ;
 
-            if (cannotWalk)
+            bool caught = OtherPosition.Distance(AgentPosition, CellInfo.DistanceType.Manhattan) == 0;
+
+            if (cannotWalk || caught)
                 return penaltyScore;
 
             QTableState nextState = GetNextState(action);
