@@ -84,16 +84,15 @@ namespace QMind
 
             //Debug.Log($"max steps : {qMindTrainerParams.maxSteps}");
 
-            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
-            if(path != null && path.Length > 0) OtherPosition = path[0];
+            MovePlayer();
 
             QTableState state = GetState();
+            QTableAction action = GetAction();
+            float reward = GetReward();
 
-            QTableReward reward = GetReward();
+            MoveAgent();
 
-            AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
-
-            UpdateQTable(state, reward);
+            UpdateQTable(state, action, reward);
 
             ++this.currentStep;
 
@@ -164,20 +163,32 @@ namespace QMind
             return state;
         }
 
-        private QTableReward GetReward()
+        private QTableAction GetAction()
         {
-            QTableReward reward = new QTableReward(
-                //UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
-                1.0f, 2.0f, 3.0f, 4.0f
-            );
-            return reward;
+            QTableAction action = QTableAction.GoEast;
+            return action;
         }
 
-        private void UpdateQTable(QTableState state, QTableReward reward)
+        private float GetReward()
         {
-            qTable.Add(state, reward);
+            return 0.0f;
         }
 
+        private void UpdateQTable(QTableState state, QTableAction action, float reward)
+        {
+            qTable.UpdateQ(state, action, reward, qMindTrainerParams.alpha, qMindTrainerParams.gamma);
+        }
+
+        private void MovePlayer()
+        {
+            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
+            if (path != null && path.Length > 0) OtherPosition = path[0];
+        }
+
+        private void MoveAgent()
+        {
+            AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
+        }
 
         #endregion
 
