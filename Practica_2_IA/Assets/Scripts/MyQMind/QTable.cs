@@ -78,6 +78,8 @@ public class QTable
 
     public float GetQ(QTableState state, QTableAction action)
     {
+        if (!qTable.ContainsKey(state))
+            return 0.0f;
         switch (action)
         {
             case QTableAction.GoNorth:
@@ -95,6 +97,8 @@ public class QTable
 
     public float GetMaxQ(QTableState state)
     {
+        if (!qTable.ContainsKey(state))
+            return 0.0f;
         float f1 = qTable[state].rewardNorth;
         float f2 = qTable[state].rewardEast;
         float f3 = qTable[state].rewardSouth;
@@ -104,6 +108,8 @@ public class QTable
 
     public void SetQ(QTableState state, QTableAction action, float value)
     {
+        if (!qTable.ContainsKey(state))
+            Add(state);
         QTableReward reward = qTable[state];
         switch (action)
         {
