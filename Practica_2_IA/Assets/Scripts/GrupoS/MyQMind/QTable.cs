@@ -13,6 +13,7 @@ public class QTable
     
     private string filePath;
     private string fileName;
+    private string fullFilePath;
 
     private static char[] csvSeparators = { ',', ';' };
 
@@ -20,12 +21,13 @@ public class QTable
 
     #region Constructors
 
-    public QTable(string filename = "QTable.csv")
+    public QTable(string filename = "./GrupoS/QTable/QTable.csv")
     {
         this.qTable = new Dictionary<QTableState, QTableReward>();
         this.filePath = $"{Application.dataPath}";
         //this.filePath = $"{Application.persistentDataPath}";
         this.fileName = filename;
+        this.fullFilePath = $"{filePath}/{fileName}";
     }
 
     #endregion
@@ -34,7 +36,7 @@ public class QTable
 
     public string GetFileName()
     {
-        return $"{filePath}/{fileName}";
+        return fullFilePath;
     }
 
     public void LoadTable()
