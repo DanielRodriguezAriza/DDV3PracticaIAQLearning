@@ -21,7 +21,7 @@ public class QTable
 
     #region Constructors
 
-    public QTable(string filename = "./GrupoS/QTable/QTable.csv")
+    public QTable(string filename = "./Scripts/GrupoS/MyQMind/QTableCSV/QTable.csv")
     {
         this.qTable = new Dictionary<QTableState, QTableReward>();
         this.filePath = $"{Application.dataPath}";
