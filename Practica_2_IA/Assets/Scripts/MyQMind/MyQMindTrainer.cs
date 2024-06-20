@@ -44,7 +44,8 @@ namespace QMind
         private QTable qTable;
 
 
-        private const float penaltyScore = -1.0f;
+        private const float smallPenaltyScore = -1.0f;
+        private const float largePenaltyScore = -5.0f;
         private const float rewardScore = 100.0f;
         private const float neutralScore = 0.0f;
 
@@ -95,7 +96,7 @@ namespace QMind
 
             UpdateQTable(state, action, reward);
 
-            if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < 0) // -1 means infinite max steps.
+            if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < (smallPenaltyScore - 0.01)) // -1 means infinite max steps.
             {
                 NextEpisode();
             }
@@ -281,11 +282,19 @@ namespace QMind
             bool caught = OtherPosition.Distance(AgentPosition, CellInfo.DistanceType.Manhattan) == 0;
 
             if (cannotWalk || caught)
-                return penaltyScore;
+                return largePenaltyScore;
 
             QTableState nextState = GetNextState(action);
-            if (nextState.EnemyDistance == QTableDistances.Far)
+
+            if (nextState.EnemyDistance < state.EnemyDistance)
+            {
+                return smallPenaltyScore;
+            }
+            else
+            if (nextState.EnemyDistance > state.EnemyDistance && nextState.EnemyDistance == QTableDistances.Far)
+            {
                 return rewardScore;
+            }
 
             return neutralScore;
         }
