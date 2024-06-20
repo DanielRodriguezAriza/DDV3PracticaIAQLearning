@@ -1,0 +1,737 @@
+/* ICSVConverticle.cs */
+
+public interface ICSVConvertible
+{
+    public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0);
+    public void CSVSetData(string[] csvElements, int offset = 0);
+    public string CSVGetData(char separator = ';');
+    public int CSVGetNumElements();
+}
+
+
+/* MyQMindTester.cs */
+
+namespace QMind
+{
+    public class MyQMindTester : IQMind
+    {
+        private WorldInfo worldInfo;
+        private QTable qTable;
+
+        public void Initialize(WorldInfo worldInfo)
+        {
+            this.worldInfo = worldInfo;
+            this.qTable = new QTable();
+
+            qTable.LoadTable();
+
+            Debug.Log("MyQMindTester: Initialized");
+        }
+
+        public CellInfo GetNextStep(CellInfo currentPosition, CellInfo otherPosition)
+        {
+            Debug.Log("MyQMindTester: GetNextStep");
+            QTableState currentState = GetState(currentPosition, otherPosition);
+            QTableAction bestAction = qTable.GetBestAction(currentState);
+            CellInfo ans = MoveAgent(currentPosition, bestAction);
+            return ans;
+        }
+
+        private QTableState GetState(CellInfo cell, CellInfo other)
+        {
+            QTableState state = new QTableState(
+                GetIsWalkable(cell, Directions.Up),
+                GetIsWalkable(cell, Directions.Right),
+                GetIsWalkable(cell, Directions.Down),
+                GetIsWalkable(cell, Directions.Left),
+                GetOtherIsInDirection(cell, other, Directions.Up),
+                GetOtherIsInDirection(cell, other, Directions.Right),
+                GetOtherIsInDirection(cell, other, Directions.Down),
+                GetOtherIsInDirection(cell, other, Directions.Left),
+                GetOtherDistance(cell, other)
+            );
+            return state;
+        }
+
+        private bool GetIsWalkable(CellInfo cell, Directions dir)
+        {
+            return worldInfo.NextCell(cell, dir).Walkable;
+        }
+
+        private bool GetOtherIsInDirection(CellInfo cell, CellInfo other, Directions dir)
+        {
+            float otherX = other.x;
+            float otherY = other.y;
+            float selfX = cell.x;
+            float selfY = cell.y;
+            switch (dir)
+            {
+                case Directions.Up:
+                    return selfY < otherY;
+                case Directions.Right:
+                    return selfX < otherX;
+                case Directions.Down:
+                    return selfY > otherY;
+                case Directions.Left:
+                    return selfX > otherX;
+                default:
+                    return false;
+            }
+        }
+
+        private QTableDistances GetOtherDistance(CellInfo cell, CellInfo other)
+        {
+            float distance = cell.Distance(other, CellInfo.DistanceType.Manhattan);
+            if (distance >= 10) return QTableDistances.Far;
+            if (distance >= 5) return QTableDistances.Middle;
+            return QTableDistances.Close;
+        }
+
+        private CellInfo MoveAgent(CellInfo cell, QTableAction action)
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            CellInfo ans = worldInfo.NextCell(cell, directions[(int)action]);
+            ans = ans.Walkable ? ans : null;
+            return ans;
+        }
+    }
+}
+
+
+/* MyQMindTrainer.cs */
+
+namespace QMind
+{
+    public class MyQMindTrainer : IQMindTrainer
+    {
+        #region PrivateVariables
+
+        QMindTrainerParams qMindTrainerParams;
+        private WorldInfo worldInfo;
+        INavigationAlgorithm navigationAlgorithm;
+
+        private int currentEpisode;
+        private int currentStep;
+
+        private QTable qTable;
+
+
+        private const float smallPenaltyScore = -10.0f;
+        private const float largePenaltyScore = -100.0f;
+        private const float rewardScore = 100.0f;
+        private const float neutralScore = 0.0f;
+
+        private int totalRewardCount = 0;
+        private float totalRewardValue = 0.0f;
+        private float averageRewardValue = 0.0f;
+
+        #endregion
+
+        #region PublicVariables
+
+        public int CurrentEpisode { get { return currentEpisode; } }
+        public int CurrentStep { get { return currentStep; } }
+        public CellInfo AgentPosition { get; private set; }
+        public CellInfo OtherPosition { get; private set; }
+        public float Return { get { return totalRewardValue; } }
+        public float ReturnAveraged { get { return averageRewardValue; } }
+        public event EventHandler OnEpisodeStarted;
+        public event EventHandler OnEpisodeFinished;
+
+        #endregion
+
+        #region PublicMethods
+
+        public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
+        {
+            this.qMindTrainerParams = qMindTrainerParams;
+            this.worldInfo = worldInfo;
+            this.navigationAlgorithm = navigationAlgorithm;
+            this.navigationAlgorithm.Initialize(this.worldInfo);
+
+            this.qTable = new QTable();
+
+            LoadQTable();
+
+            Debug.Log("MyQMindTrainer: Initialized");
+
+            StartEpisode(0);
+        }
+
+        public void DoStep(bool train)
+        {
+            QTableState state = GetState();
+            QTableAction action = GetAction(state);
+            float reward = GetReward(state, action);
+
+            UpdateDisplayRewardValues(reward);
+
+            if(train)
+                UpdateQTable(state, action, reward);
+
+            if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < (smallPenaltyScore - 0.01)) // -1 means infinite max steps.
+            {
+                OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
+                NextEpisode();
+            }
+
+            MovePlayer();
+            MoveAgent(action);
+
+            ++this.currentStep;
+        }
+
+        #endregion
+
+        #region PrivateMethods
+
+        private void UpdateDisplayRewardValues(float reward)
+        {
+            ++this.totalRewardCount;
+            this.totalRewardValue += reward;
+            this.averageRewardValue = ((float)this.totalRewardValue / (float)this.totalRewardCount);
+        }
+
+        private void StartEpisode(int episodeIdx)
+        {
+            currentEpisode = episodeIdx;
+            
+            AgentPosition = worldInfo.RandomCell();
+            OtherPosition = worldInfo.RandomCell();
+            
+            OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
+            
+            this.currentStep = 0;
+
+            /*
+            int val = currentEpisode % qMindTrainerParams.episodesBetweenSaves;
+            Debug.Log($"val : {val}");
+            */
+
+            if(episodeIdx > 0)
+                SaveQTable();
+        }
+
+        private void NextEpisode()
+        {
+            StartEpisode(currentEpisode + 1);
+        }
+
+        private Directions GetRandomDirection()
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            int dir = UnityEngine.Random.Range(0, 4);
+            return directions[dir];
+        }
+
+        private Directions GetActionDirection(QTableAction action)
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            int dir = (int)action;
+            return directions[dir];
+        }
+
+        private QTableAction GetRandomAction()
+        {
+            QTableAction[] actions = new QTableAction[4] { QTableAction.GoNorth, QTableAction.GoEast, QTableAction.GoSouth, QTableAction.GoWest};
+            int action = UnityEngine.Random.Range(0, 4);
+            return actions[action];
+        }
+
+        private QTableAction GetBestAction(QTableState state)
+        {
+            float[] qValues = new float[4] {
+                qTable.GetQ(state, QTableAction.GoNorth),
+                qTable.GetQ(state, QTableAction.GoEast),
+                qTable.GetQ(state, QTableAction.GoSouth),
+                qTable.GetQ(state, QTableAction.GoWest)
+            };
+            float maxValue = qValues[0];
+            int maxIndex = 0;
+            for (int i = 0; i < qValues.Length; ++i)
+            {
+                if (qValues[i] > maxValue)
+                {
+                    maxValue = qValues[i];
+                    maxIndex = i;
+                }
+            }
+            return (QTableAction)maxIndex;
+        }
+
+
+        private void SaveQTable()
+        {
+            if (currentEpisode > 0 && currentEpisode % qMindTrainerParams.episodesBetweenSaves == 0)
+            {
+                qTable.SaveTable();
+            }
+        }
+
+        private void LoadQTable()
+        {
+            qTable.LoadTable();
+            //qTable.DebugPrintTableInfo();
+        }
+
+
+        private QTableState GetState(CellInfo cell)
+        {
+            QTableState state = new QTableState(
+                GetIsWalkable(cell, Directions.Up),
+                GetIsWalkable(cell, Directions.Right),
+                GetIsWalkable(cell, Directions.Down),
+                GetIsWalkable(cell, Directions.Left),
+                GetOtherIsInDirection(cell, Directions.Up),
+                GetOtherIsInDirection(cell, Directions.Right),
+                GetOtherIsInDirection(cell, Directions.Down),
+                GetOtherIsInDirection(cell, Directions.Left),
+                GetOtherDistance(cell)
+            );
+            return state;
+        }
+
+        private QTableState GetState()
+        {
+            return GetState(AgentPosition);
+        }
+
+        private bool GetIsWalkable(CellInfo cell, Directions dir)
+        {
+            return worldInfo.NextCell(cell, dir).Walkable;
+        }
+
+        private bool GetOtherIsInDirection(CellInfo cell, Directions dir)
+        {
+            float otherX = OtherPosition.x;
+            float otherY = OtherPosition.y;
+            float selfX = cell.x;
+            float selfY = cell.y;
+            switch (dir)
+            {
+                case Directions.Up:
+                    return selfY < otherY;
+                case Directions.Right:
+                    return selfX < otherX;
+                case Directions.Down:
+                    return selfY > otherY;
+                case Directions.Left:
+                    return selfX > otherX;
+                default:
+                    return false;
+            }
+        }
+
+        private QTableDistances GetOtherDistance(CellInfo cell)
+        {
+            float distance = cell.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
+            if (distance >= 10) return QTableDistances.Far;
+            if (distance >= 5) return QTableDistances.Middle;
+            return QTableDistances.Close;
+        }
+
+        private QTableState GetNextState(QTableAction action)
+        {
+            switch (action)
+            {
+                case QTableAction.GoNorth:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Up));
+                case QTableAction.GoEast:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Right));
+                case QTableAction.GoSouth:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Down));
+                case QTableAction.GoWest:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Left));
+                default:
+                    return GetState(AgentPosition);
+            }
+        }
+
+        private QTableAction GetAction(QTableState state)
+        {
+            float n = UnityEngine.Random.Range(0.0f, 1.0f);
+
+            if (n <= qMindTrainerParams.epsilon)
+                return GetRandomAction();
+
+            return GetBestAction(state);
+        }
+
+        private float GetReward(QTableState state, QTableAction action)
+        {
+            bool cannotWalk =
+                (!state.NorthIsWalkable && action == QTableAction.GoNorth) ||
+                (!state.EastIsWalkable && action == QTableAction.GoEast) ||
+                (!state.SouthIsWalkable && action == QTableAction.GoSouth) ||
+                (!state.WestIsWalkable && action == QTableAction.GoWest)
+                ;
+
+            bool caught = OtherPosition.Distance(AgentPosition, CellInfo.DistanceType.Manhattan) <= 1;
+
+            bool walkingTowardEnemy = // only when walking toward enemy AND close to enemy
+                state.EnemyDistance == QTableDistances.Close &&
+                (
+                    (state.EnemyIsNorth && action == QTableAction.GoNorth) ||
+                    (state.EnemyIsEast && action == QTableAction.GoEast) ||
+                    (state.EnemyIsSouth && action == QTableAction.GoSouth) ||
+                    (state.EnemyIsWest && action == QTableAction.GoWest)
+                )
+            ;
+
+            if (cannotWalk || caught)
+                return largePenaltyScore;
+
+            if (walkingTowardEnemy)
+                return smallPenaltyScore;
+
+            QTableState nextState = GetNextState(action);
+
+            if (nextState.EnemyDistance > state.EnemyDistance && nextState.EnemyDistance == QTableDistances.Far)
+                return rewardScore;
+
+            return neutralScore;
+        }
+
+        private void UpdateQTable(QTableState state, QTableAction action, float reward)
+        {
+            qTable.UpdateQ(state, GetNextState(action), action, reward, qMindTrainerParams.alpha, qMindTrainerParams.gamma);
+        }
+
+        private void MovePlayer()
+        {
+            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 100);
+            if (path != null && path.Length > 0) OtherPosition = path[0];
+        }
+
+        private void MoveAgent(QTableAction action)
+        {
+            AgentPosition = worldInfo.NextCell(AgentPosition, GetActionDirection(action));
+        }
+
+        #endregion
+
+    }
+}
+
+/* QTableData.cs */
+
+public enum QTableDistances
+{
+    Close = 0,
+    Middle,
+    Far
+}
+
+public enum QTableAction
+{
+    GoNorth = 0,
+    GoEast,
+    GoSouth,
+    GoWest
+}
+
+public struct QTableState : ICSVConvertible
+{
+    public bool NorthIsWalkable;
+    public bool EastIsWalkable;
+    public bool SouthIsWalkable;
+    public bool WestIsWalkable;
+
+    public bool EnemyIsNorth;
+    public bool EnemyIsEast;
+    public bool EnemyIsSouth;
+    public bool EnemyIsWest;
+    
+    public QTableDistances EnemyDistance;
+
+    public QTableState(bool northWalkable = true, bool eastWalkable = true, bool southWalkable = true, bool westWalkable = true, bool enemyIsNorth = true, bool enemyIsEast = true, bool enemyIsSouth = true, bool enemyIsWest = true, QTableDistances distance = QTableDistances.Close)
+    {
+        this.NorthIsWalkable = northWalkable;
+        this.EastIsWalkable = eastWalkable;
+        this.SouthIsWalkable = southWalkable;
+        this.WestIsWalkable = westWalkable;
+
+        this.EnemyIsNorth = enemyIsNorth;
+        this.EnemyIsEast = enemyIsEast;
+        this.EnemyIsSouth = enemyIsSouth;
+        this.EnemyIsWest = enemyIsWest;
+
+        this.EnemyDistance = distance;
+    }
+
+    public string CSVGetData(char separator = ';')
+    {
+        return $"{NorthIsWalkable}{separator} {EastIsWalkable}{separator} {SouthIsWalkable}{separator} {WestIsWalkable}{separator} {EnemyIsNorth}{separator} {EnemyIsEast}{separator} {EnemyIsSouth}{separator} {EnemyIsWest}{separator} {(int)EnemyDistance}{separator}";
+    }
+
+    public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0)
+    {
+        string[] dataStrings = csvLine.Split(csvSeparators);
+        CSVSetData(dataStrings, offset);
+    }
+
+    public void CSVSetData(string[] dataStrings, int offset = 0)
+    {
+        this.NorthIsWalkable = bool.Parse(dataStrings[offset + 0]);
+        this.EastIsWalkable  = bool.Parse(dataStrings[offset + 1]);
+        this.SouthIsWalkable = bool.Parse(dataStrings[offset + 2]);
+        this.WestIsWalkable  = bool.Parse(dataStrings[offset + 3]);
+        this.EnemyIsNorth    = bool.Parse(dataStrings[offset + 4]);
+        this.EnemyIsEast     = bool.Parse(dataStrings[offset + 5]);
+        this.EnemyIsSouth    = bool.Parse(dataStrings[offset + 6]);
+        this.EnemyIsWest     = bool.Parse(dataStrings[offset + 7]);
+        this.EnemyDistance   = (QTableDistances)int.Parse(dataStrings[offset + 8]);
+    }
+
+    public int CSVGetNumElements()
+    {
+        return 9;
+    }
+}
+
+public struct QTableReward : ICSVConvertible
+{
+    public float rewardNorth;
+    public float rewardEast;
+    public float rewardSouth;
+    public float rewardWest;
+
+    public QTableReward(float north = 0.0f, float east = 0.0f, float south = 0.0f, float west = 0.0f)
+    {
+        this.rewardNorth = north;
+        this.rewardEast = east;
+        this.rewardSouth = south;
+        this.rewardWest = west;
+    }
+
+    public string CSVGetData(char separator = ';')
+    {
+        return $"{rewardNorth.ToString(CultureInfo.InvariantCulture)}{separator} {rewardEast.ToString(CultureInfo.InvariantCulture)}{separator} {rewardSouth.ToString(CultureInfo.InvariantCulture)}{separator} {rewardWest.ToString(CultureInfo.InvariantCulture)}{separator}";
+    }
+
+    public void CSVSetData(string csvLine, char[] csvSeparators, int offset = 0)
+    {
+        string[] dataStrings = csvLine.Split(csvSeparators);
+        CSVSetData(dataStrings, offset);
+    }
+
+    public void CSVSetData(string[] dataStrings, int offset = 0)
+    {
+        this.rewardNorth = float.Parse(dataStrings[offset + 0], CultureInfo.InvariantCulture);
+        this.rewardEast  = float.Parse(dataStrings[offset + 1], CultureInfo.InvariantCulture);
+        this.rewardSouth = float.Parse(dataStrings[offset + 2], CultureInfo.InvariantCulture);
+        this.rewardWest  = float.Parse(dataStrings[offset + 3], CultureInfo.InvariantCulture);
+    }
+
+    public int CSVGetNumElements()
+    {
+        return 4;
+    }
+
+}
+
+
+/* QTable.cs */
+
+
+public class QTable
+{
+    #region Variables
+
+    private Dictionary<QTableState, QTableReward> qTable; // possible actions : goto { n, s, e, w }
+    
+    private string filePath;
+    private string fileName;
+    private string fullFilePath;
+
+    private static char[] csvSeparators = { ',', ';' };
+
+    #endregion
+
+    #region Constructors
+
+    public QTable(string filename = "./Scripts/GrupoS/MyQMind/QTableCSV/QTable.csv")
+    {
+        this.qTable = new Dictionary<QTableState, QTableReward>();
+        this.filePath = $"{Application.dataPath}";
+        //this.filePath = $"{Application.persistentDataPath}";
+        this.fileName = filename;
+        this.fullFilePath = $"{filePath}/{fileName}";
+    }
+
+    #endregion
+
+    #region PublicMethods
+
+    public string GetFileName()
+    {
+        return fullFilePath;
+    }
+
+    public void LoadTable()
+    {
+        Debug.Log($"Loaded QTable from path \"{GetFileName()}\"");
+        ReadFile();
+    }
+
+    public void SaveTable()
+    {
+        Debug.Log($"Saved QTable to path \"{GetFileName()}\"");
+        WriteFile();
+    }
+
+    public void Add(QTableState state, QTableReward reward)
+    {
+        if(qTable.ContainsKey(state))
+            qTable[state] = reward;
+        else
+            qTable.Add(state, reward);
+    }
+
+    public void Add(QTableState state)
+    {
+        QTableReward reward = new QTableReward();
+        Add(state, reward);
+    }
+
+    // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
+    public void UpdateQ(QTableState state, QTableState nextState, QTableAction action, float reward, float alpha, float gamma)
+    {
+        float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(nextState), alpha);
+        //Debug.Log($"Updating Q(s,a) = {GetQ(state, action)} with reward {reward}, Q(s,a)' = {newQ}");
+        SetQ(state, action, newQ);
+    }
+
+    public float GetQ(QTableState state, QTableAction action)
+    {
+        if (!qTable.ContainsKey(state))
+            return 0.0f;
+        switch (action)
+        {
+            case QTableAction.GoNorth:
+                return qTable[state].rewardNorth;
+            case QTableAction.GoEast:
+                return qTable[state].rewardEast;
+            case QTableAction.GoSouth:
+                return qTable[state].rewardSouth;
+            case QTableAction.GoWest:
+                return qTable[state].rewardWest;
+            default:
+                return -1;
+        }
+    }
+
+    public float GetMaxQ(QTableState state)
+    {
+        if (!qTable.ContainsKey(state))
+            return 0.0f;
+        float f1 = qTable[state].rewardNorth;
+        float f2 = qTable[state].rewardEast;
+        float f3 = qTable[state].rewardSouth;
+        float f4 = qTable[state].rewardWest;
+        return Mathf.Max(f1, f2, f3, f3);
+    }
+
+    public QTableAction GetBestAction(QTableState state)
+    {
+        if (!qTable.ContainsKey(state))
+            Add(state);
+
+        QTableAction[] actions = new QTableAction[4] { QTableAction.GoNorth, QTableAction.GoEast, QTableAction.GoSouth, QTableAction.GoWest };
+        float[] rewards = new float[4] { qTable[state].rewardNorth, qTable[state].rewardEast, qTable[state].rewardSouth, qTable[state].rewardWest };
+        
+        float maxValue = rewards[0];
+        int maxIndex = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            if (rewards[i] > maxValue)
+            {
+                maxValue = rewards[i];
+                maxIndex = i;
+            }
+        }
+
+        return actions[maxIndex];
+    }
+
+    public void SetQ(QTableState state, QTableAction action, float value)
+    {
+        if (!qTable.ContainsKey(state))
+            Add(state);
+        QTableReward reward = qTable[state];
+        switch (action)
+        {
+            case QTableAction.GoNorth:
+                reward.rewardNorth = value;
+                break;
+            case QTableAction.GoEast:
+                reward.rewardEast = value;
+                break;
+            case QTableAction.GoSouth:
+                reward.rewardSouth = value;
+                break;
+            case QTableAction.GoWest:
+                reward.rewardWest = value;
+                break;
+        }
+        qTable[state] = reward;
+    }
+
+    #endregion
+
+    #region PrivateMethods
+
+    private void ReadFile()
+    {
+        string filename = GetFileName();
+        StreamReader reader = new StreamReader(filename);
+
+        string csvLine;
+
+        while ((csvLine = reader.ReadLine()) != null)
+        {
+            string[] dataStrings = csvLine.Split(csvSeparators);
+
+            QTableState state = new QTableState();
+            state.CSVSetData(dataStrings, 0);
+
+            QTableReward reward = new QTableReward();
+            reward.CSVSetData(dataStrings, state.CSVGetNumElements());
+
+            qTable.Add(state, reward);
+        }
+
+        reader.Close();
+    }
+
+    private void WriteFile()
+    {
+        string filename = GetFileName();
+        StreamWriter writer = new StreamWriter(filename, false);
+
+        foreach (var entry in qTable)
+        {
+            string stateString = entry.Key.CSVGetData();
+            string valueString = entry.Value.CSVGetData();
+            writer.WriteLine($"{stateString} {valueString}");
+        }
+
+        writer.Close();
+    }
+
+    #endregion
+
+    #region PublicDebugMethods
+
+    public void DebugPrintTableInfo()
+    {
+        foreach (var entry in qTable)
+        {
+            string stateString = entry.Key.CSVGetData();
+            string valueString = entry.Value.CSVGetData();
+            Debug.Log($"{stateString} {valueString}");
+        }
+    }
+
+    #endregion
+}
