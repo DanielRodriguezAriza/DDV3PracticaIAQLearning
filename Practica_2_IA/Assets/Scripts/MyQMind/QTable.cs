@@ -101,6 +101,28 @@ public class QTable
         return Mathf.Max(f1, f2, f3, f3);
     }
 
+    public QTableAction GetBestAction(QTableState state)
+    {
+        if (!qTable.ContainsKey(state))
+            Add(state);
+
+        QTableAction[] actions = new QTableAction[4] { QTableAction.GoNorth, QTableAction.GoEast, QTableAction.GoSouth, QTableAction.GoWest };
+        float[] rewards = new float[4] { qTable[state].rewardNorth, qTable[state].rewardEast, qTable[state].rewardSouth, qTable[state].rewardWest };
+        
+        float maxValue = rewards[0];
+        int maxIndex = 0;
+        for (int i = 0; i < 4; ++i)
+        {
+            if (rewards[i] > maxValue)
+            {
+                maxValue = rewards[i];
+                maxIndex = i;
+            }
+        }
+
+        return actions[maxIndex];
+    }
+
     public void SetQ(QTableState state, QTableAction action, float value)
     {
         if (!qTable.ContainsKey(state))
