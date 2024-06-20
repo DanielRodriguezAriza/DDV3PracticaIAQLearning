@@ -105,6 +105,7 @@ namespace QMind
 
             if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < (smallPenaltyScore - 0.01)) // -1 means infinite max steps.
             {
+                OnEpisodeFinished?.Invoke(this, EventArgs.Empty);
                 NextEpisode();
             }
 
