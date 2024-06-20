@@ -43,6 +43,11 @@ namespace QMind
 
         private QTable qTable;
 
+
+        private const float penaltyScore = -1.0f;
+        private const float rewardScore = 100.0f;
+        private const float neutralScore = 0.0f;
+
         #endregion
 
         #region PublicVariables
@@ -267,7 +272,21 @@ namespace QMind
 
         private float GetReward(QTableState state, QTableAction action)
         {
-            return qTable.GetQ(state, action); // PLACEHOLDER, THIS IS OBVIOUSLY WRONG!!!!
+            bool cannotWalk =
+                (!state.NorthIsWalkable && action == QTableAction.GoNorth) ||
+                (!state.EastIsWalkable && action == QTableAction.GoEast) ||
+                (!state.SouthIsWalkable && action == QTableAction.GoSouth) ||
+                (!state.WestIsWalkable && action == QTableAction.GoWest)
+                ;
+
+            if (cannotWalk)
+                return penaltyScore;
+
+            QTableState nextState = GetNextState(action);
+            if (nextState.EnemyDistance == QTableDistances.Far)
+                return rewardScore;
+
+            return neutralScore;
         }
 
         private void UpdateQTable(QTableState state, QTableAction action, float reward)
