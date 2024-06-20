@@ -9,7 +9,7 @@ public enum QTableDistances
     Far
 }
 
-public enum QTableActions
+public enum QTableAction
 {
     GoNorth = 0,
     GoEast,
@@ -83,12 +83,12 @@ public struct QTableReward : ICSVConvertible
     public float rewardSouth;
     public float rewardWest;
 
-    public QTableReward(float n, float e, float s, float w)
+    public QTableReward(float north = 0.0f, float east = 0.0f, float south = 0.0f, float west = 0.0f)
     {
-        this.rewardNorth = n;
-        this.rewardEast = e;
-        this.rewardSouth = s;
-        this.rewardWest = w;
+        this.rewardNorth = north;
+        this.rewardEast = east;
+        this.rewardSouth = south;
+        this.rewardWest = west;
     }
 
     public string CSVGetData(char separator = ';')
