@@ -49,6 +49,10 @@ namespace QMind
         private const float rewardScore = 100.0f;
         private const float neutralScore = 0.0f;
 
+        private int totalRewardCount = 0;
+        private float totalRewardValue = 0.0f;
+        private float averageRewardValue = 0.0f;
+
         #endregion
 
         #region PublicVariables
@@ -57,8 +61,8 @@ namespace QMind
         public int CurrentStep { get { return currentStep; } }
         public CellInfo AgentPosition { get; private set; }
         public CellInfo OtherPosition { get; private set; }
-        public float Return { get { return 0; } }
-        public float ReturnAveraged { get { return 1; } }
+        public float Return { get { return totalRewardValue; } }
+        public float ReturnAveraged { get { return averageRewardValue; } }
         public event EventHandler OnEpisodeStarted;
         public event EventHandler OnEpisodeFinished;
 
@@ -94,6 +98,9 @@ namespace QMind
             QTableAction action = GetAction(state);
             float reward = GetReward(state, action);
 
+            UpdateDisplayRewardValues(reward);
+
+
             UpdateQTable(state, action, reward);
 
             if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < (smallPenaltyScore - 0.01)) // -1 means infinite max steps.
@@ -110,6 +117,13 @@ namespace QMind
         #endregion
 
         #region PrivateMethods
+
+        private void UpdateDisplayRewardValues(float reward)
+        {
+            ++this.totalRewardCount;
+            this.totalRewardValue += reward;
+            this.averageRewardValue = ((float)this.totalRewardValue / (float)this.totalRewardCount);
+        }
 
         private void StartEpisode(int episodeIdx)
         {
