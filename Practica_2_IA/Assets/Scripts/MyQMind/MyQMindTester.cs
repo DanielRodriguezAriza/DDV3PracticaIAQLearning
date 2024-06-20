@@ -31,18 +31,81 @@ namespace QMind
     public class MyQMindTester : IQMind
     {
         private WorldInfo worldInfo;
+        private QTable qTable;
 
         public void Initialize(WorldInfo worldInfo)
         {
             this.worldInfo = worldInfo;
+            this.qTable = new QTable();
 
-            Debug.Log("QMindDummy: initialized");
+            qTable.LoadTable();
+
+            Debug.Log("MyQMindTester: Initialized");
         }
 
         public CellInfo GetNextStep(CellInfo currentPosition, CellInfo otherPosition)
         {
-            Debug.Log("QMindDummy: GetNextStep");
+            Debug.Log("MyQMindTester: GetNextStep");
+            QTableState currentState = GetState(currentPosition, otherPosition);
+            QTableAction bestAction = qTable.GetBestAction(currentState);
+            MoveAgent(currentPosition, bestAction);
             return null;
+        }
+
+        private QTableState GetState(CellInfo cell, CellInfo other)
+        {
+            QTableState state = new QTableState(
+                GetIsWalkable(cell, Directions.Up),
+                GetIsWalkable(cell, Directions.Right),
+                GetIsWalkable(cell, Directions.Down),
+                GetIsWalkable(cell, Directions.Left),
+                GetOtherIsInDirection(cell, other, Directions.Up),
+                GetOtherIsInDirection(cell, other, Directions.Right),
+                GetOtherIsInDirection(cell, other, Directions.Down),
+                GetOtherIsInDirection(cell, other, Directions.Left),
+                GetOtherDistance(cell, other)
+            );
+            return state;
+        }
+
+        private bool GetIsWalkable(CellInfo cell, Directions dir)
+        {
+            return worldInfo.NextCell(cell, dir).Walkable;
+        }
+
+        private bool GetOtherIsInDirection(CellInfo cell, CellInfo other, Directions dir)
+        {
+            float otherX = other.x;
+            float otherY = other.y;
+            float selfX = cell.x;
+            float selfY = cell.y;
+            switch (dir)
+            {
+                case Directions.Up:
+                    return selfY < otherY;
+                case Directions.Right:
+                    return selfX < otherX;
+                case Directions.Down:
+                    return selfY > otherY;
+                case Directions.Left:
+                    return selfX > otherX;
+                default:
+                    return false;
+            }
+        }
+
+        private QTableDistances GetOtherDistance(CellInfo cell, CellInfo other)
+        {
+            float distance = cell.Distance(other, CellInfo.DistanceType.Manhattan);
+            if (distance >= 10) return QTableDistances.Far;
+            if (distance >= 5) return QTableDistances.Middle;
+            return QTableDistances.Close;
+        }
+
+        private void MoveAgent(CellInfo cell, QTableAction action)
+        {
+            Directions[] directions = new Directions[4] { Directions.Up, Directions.Right, Directions.Down, Directions.Left };
+            cell = worldInfo.NextCell(cell, directions[(int)action]);
         }
     }
 }
