@@ -157,17 +157,51 @@ namespace QMind
         private QTableState GetState(CellInfo cell)
         {
             QTableState state = new QTableState(
-                worldInfo.NextCell(cell, Directions.Up).Walkable,
-                worldInfo.NextCell(cell, Directions.Right).Walkable,
-                worldInfo.NextCell(cell, Directions.Down).Walkable,
-                worldInfo.NextCell(cell, Directions.Left).Walkable,
-                false,
-                false,
-                false,
-                false,
-                0
+                GetIsWalkable(cell, Directions.Up),
+                GetIsWalkable(cell, Directions.Right),
+                GetIsWalkable(cell, Directions.Down),
+                GetIsWalkable(cell, Directions.Left),
+                GetOtherIsInDirection(cell, Directions.Up),
+                GetOtherIsInDirection(cell, Directions.Right),
+                GetOtherIsInDirection(cell, Directions.Down),
+                GetOtherIsInDirection(cell, Directions.Left),
+                GetOtherDistance(cell)
             );
             return state;
+        }
+
+        private bool GetIsWalkable(CellInfo cell, Directions dir)
+        {
+            return worldInfo.NextCell(cell, dir).Walkable;
+        }
+
+        private bool GetOtherIsInDirection(CellInfo cell, Directions dir)
+        {
+            float otherX = OtherPosition.x;
+            float otherY = OtherPosition.y;
+            float selfX = cell.x;
+            float selfY = cell.y;
+            switch (dir)
+            {
+                case Directions.Up:
+                    return selfY < otherY;
+                case Directions.Right:
+                    return selfX < otherX;
+                case Directions.Down:
+                    return selfY > otherY;
+                case Directions.Left:
+                    return selfX > otherX;
+                default:
+                    return false;
+            }
+        }
+
+        private QTableDistances GetOtherDistance(CellInfo cell)
+        {
+            float distance = cell.Distance(OtherPosition, CellInfo.DistanceType.Manhattan);
+            if (distance >= 10) return QTableDistances.Far;
+            if (distance >= 5) return QTableDistances.Middle;
+            return QTableDistances.Close;
         }
 
         private QTableState GetState()
