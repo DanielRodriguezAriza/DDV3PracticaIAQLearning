@@ -58,6 +58,8 @@ namespace QMind
 
         #endregion
 
+        #region PublicMethods
+
         public void Initialize(QMindTrainerParams qMindTrainerParams, WorldInfo worldInfo, INavigationAlgorithm navigationAlgorithm)
         {
             this.qMindTrainerParams = qMindTrainerParams;
@@ -67,7 +69,7 @@ namespace QMind
 
             this.qTable = new QTable();
 
-            qTable.SaveTable();
+            LoadQTable();
 
             Debug.Log("QMindTrainerDummy: initialized");
 
@@ -98,7 +100,8 @@ namespace QMind
             );
 
             QTableReward reward = new QTableReward(
-                UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
+                //UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f), UnityEngine.Random.Range(0.0f, 1.0f)
+                1.0f, 2.0f, 3.0f, 4.0f
             );
 
             AgentPosition = worldInfo.NextCell(AgentPosition, GetRandomDirection());
@@ -114,6 +117,10 @@ namespace QMind
             }
         }
 
+        #endregion
+
+        #region PrivateMethods
+
         private void StartEpisode(int episodeIdx)
         {
             currentEpisode = episodeIdx;
@@ -124,10 +131,8 @@ namespace QMind
 
             int val = currentEpisode % qMindTrainerParams.episodesBetweenSaves;
             Debug.Log($"val : {val}");
-            if (currentEpisode % qMindTrainerParams.episodesBetweenSaves == 0)
-            {
-                qTable.SaveTable();
-            }
+
+            SaveQTable();
         }
 
         private void NextEpisode()
@@ -141,6 +146,22 @@ namespace QMind
             int dir = UnityEngine.Random.Range(0, 4);
             return directions[dir];
         }
+
+        private void SaveQTable()
+        {
+            if (currentEpisode > 0 && currentEpisode % qMindTrainerParams.episodesBetweenSaves == 0)
+            {
+                qTable.SaveTable();
+            }
+        }
+
+        private void LoadQTable()
+        {
+            qTable.LoadTable();
+            //qTable.DebugPrintTableInfo();
+        }
+
+        #endregion
 
     }
 }
