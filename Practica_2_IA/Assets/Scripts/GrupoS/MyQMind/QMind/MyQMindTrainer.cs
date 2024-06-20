@@ -88,20 +88,14 @@ namespace QMind
 
         public void DoStep(bool train)
         {
-            //Debug.Log("QMindTrainerDummy: DoStep");
-
-            //Debug.Log($"{qTable.GetFileName()}");
-
-            //Debug.Log($"max steps : {qMindTrainerParams.maxSteps}");
-
             QTableState state = GetState();
             QTableAction action = GetAction(state);
             float reward = GetReward(state, action);
 
             UpdateDisplayRewardValues(reward);
 
-
-            UpdateQTable(state, action, reward);
+            if(train)
+                UpdateQTable(state, action, reward);
 
             if (((qMindTrainerParams.maxSteps >= 0) && ((currentStep + 1) > qMindTrainerParams.maxSteps)) || reward < (smallPenaltyScore - 0.01)) // -1 means infinite max steps.
             {
