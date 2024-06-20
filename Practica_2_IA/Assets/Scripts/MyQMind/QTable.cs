@@ -66,13 +66,8 @@ public class QTable
     // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
     public void UpdateQ(QTableState state, QTableState nextState, QTableAction action, float reward, float alpha, float gamma)
     {
-        if (!qTable.ContainsKey(state))
-            Add(state);
-
-        if (!qTable.ContainsKey(nextState))
-            Add(nextState);
-
         float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(nextState), alpha);
+        Debug.Log($"Updating Q(s,a) = {GetQ(state, action)} with reward {reward}, Q(s,a)' = {newQ}");
         SetQ(state, action, newQ);
     }
 
@@ -126,6 +121,7 @@ public class QTable
                 reward.rewardWest = value;
                 break;
         }
+        qTable[state] = reward;
     }
 
     #endregion
