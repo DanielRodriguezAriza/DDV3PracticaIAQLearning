@@ -56,24 +56,33 @@ public class QTable
             qTable.Add(state, reward);
     }
 
-    // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
-    public void UpdateQ(QTableState state, QTableActions action, float reward, float alpha, float gamma)
+    public void Add(QTableState state)
     {
+        QTableReward reward = new QTableReward();
+        Add(state, reward);
+    }
+
+    // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
+    public void UpdateQ(QTableState state, QTableAction action, float reward, float alpha, float gamma)
+    {
+        if (!qTable.ContainsKey(state))
+            Add(state);
+
         float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(state), alpha);
         SetQ(state, action, newQ);
     }
 
-    public float GetQ(QTableState state, QTableActions action)
+    public float GetQ(QTableState state, QTableAction action)
     {
         switch (action)
         {
-            case QTableActions.GoNorth:
+            case QTableAction.GoNorth:
                 return qTable[state].rewardNorth;
-            case QTableActions.GoEast:
+            case QTableAction.GoEast:
                 return qTable[state].rewardEast;
-            case QTableActions.GoSouth:
+            case QTableAction.GoSouth:
                 return qTable[state].rewardSouth;
-            case QTableActions.GoWest:
+            case QTableAction.GoWest:
                 return qTable[state].rewardWest;
             default:
                 return -1;
@@ -89,21 +98,21 @@ public class QTable
         return Mathf.Max(f1, f2, f3, f3);
     }
 
-    public void SetQ(QTableState state, QTableActions action, float value)
+    public void SetQ(QTableState state, QTableAction action, float value)
     {
         QTableReward reward = qTable[state];
         switch (action)
         {
-            case QTableActions.GoNorth:
+            case QTableAction.GoNorth:
                 reward.rewardNorth = value;
                 break;
-            case QTableActions.GoEast:
+            case QTableAction.GoEast:
                 reward.rewardEast = value;
                 break;
-            case QTableActions.GoSouth:
+            case QTableAction.GoSouth:
                 reward.rewardSouth = value;
                 break;
-            case QTableActions.GoWest:
+            case QTableAction.GoWest:
                 reward.rewardWest = value;
                 break;
         }
