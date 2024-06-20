@@ -147,7 +147,7 @@ namespace QMind
         }
 
 
-        private QTableState GetState()
+        private QTableState GetState(CellInfo cell)
         {
             QTableState state = new QTableState(
                 worldInfo.NextCell(AgentPosition, Directions.Up).Walkable,
@@ -163,6 +163,28 @@ namespace QMind
             return state;
         }
 
+        private QTableState GetState()
+        {
+            return GetState(AgentPosition);
+        }
+
+        private QTableState GetNextState(QTableAction action)
+        {
+            switch (action)
+            {
+                case QTableAction.GoNorth:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Up));
+                case QTableAction.GoEast:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Right));
+                case QTableAction.GoSouth:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Down));
+                case QTableAction.GoWest:
+                    return GetState(worldInfo.NextCell(AgentPosition, Directions.Left));
+                default:
+                    return GetState(AgentPosition);
+            }
+        }
+
         private QTableAction GetAction()
         {
             QTableAction action = QTableAction.GoEast;
@@ -176,7 +198,7 @@ namespace QMind
 
         private void UpdateQTable(QTableState state, QTableAction action, float reward)
         {
-            qTable.UpdateQ(state, action, reward, qMindTrainerParams.alpha, qMindTrainerParams.gamma);
+            qTable.UpdateQ(state, GetNextState(action), action, reward, qMindTrainerParams.alpha, qMindTrainerParams.gamma);
         }
 
         private void MovePlayer()

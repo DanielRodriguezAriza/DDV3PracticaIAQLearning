@@ -1,3 +1,4 @@
+using NavigationDJIA.World;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -63,12 +64,15 @@ public class QTable
     }
 
     // Q(s,a)' = lerp(Q(s,a), reward + gamma * maxQ(s',a'), alpha);
-    public void UpdateQ(QTableState state, QTableAction action, float reward, float alpha, float gamma)
+    public void UpdateQ(QTableState state, QTableState nextState, QTableAction action, float reward, float alpha, float gamma)
     {
         if (!qTable.ContainsKey(state))
             Add(state);
 
-        float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(state), alpha);
+        if (!qTable.ContainsKey(nextState))
+            Add(nextState);
+
+        float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(nextState), alpha);
         SetQ(state, action, newQ);
     }
 
