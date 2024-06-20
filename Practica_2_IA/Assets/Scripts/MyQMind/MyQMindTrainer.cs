@@ -44,8 +44,8 @@ namespace QMind
         private QTable qTable;
 
 
-        private const float smallPenaltyScore = -1.0f;
-        private const float largePenaltyScore = -5.0f;
+        private const float smallPenaltyScore = -10.0f;
+        private const float largePenaltyScore = -100.0f;
         private const float rewardScore = 100.0f;
         private const float neutralScore = 0.0f;
 
@@ -114,15 +114,21 @@ namespace QMind
         private void StartEpisode(int episodeIdx)
         {
             currentEpisode = episodeIdx;
+            
             AgentPosition = worldInfo.RandomCell();
             OtherPosition = worldInfo.RandomCell();
+            
             OnEpisodeStarted?.Invoke(this, EventArgs.Empty);
+            
             this.currentStep = 0;
 
+            /*
             int val = currentEpisode % qMindTrainerParams.episodesBetweenSaves;
             Debug.Log($"val : {val}");
+            */
 
-            SaveQTable();
+            if(episodeIdx > 0)
+                SaveQTable();
         }
 
         private void NextEpisode()
@@ -184,7 +190,7 @@ namespace QMind
         private void LoadQTable()
         {
             qTable.LoadTable();
-            qTable.DebugPrintTableInfo();
+            //qTable.DebugPrintTableInfo();
         }
 
 
@@ -202,6 +208,11 @@ namespace QMind
                 GetOtherDistance(cell)
             );
             return state;
+        }
+
+        private QTableState GetState()
+        {
+            return GetState(AgentPosition);
         }
 
         private bool GetIsWalkable(CellInfo cell, Directions dir)
@@ -236,11 +247,6 @@ namespace QMind
             if (distance >= 10) return QTableDistances.Far;
             if (distance >= 5) return QTableDistances.Middle;
             return QTableDistances.Close;
-        }
-
-        private QTableState GetState()
-        {
-            return GetState(AgentPosition);
         }
 
         private QTableState GetNextState(QTableAction action)
@@ -279,22 +285,28 @@ namespace QMind
                 (!state.WestIsWalkable && action == QTableAction.GoWest)
                 ;
 
-            bool caught = OtherPosition.Distance(AgentPosition, CellInfo.DistanceType.Manhattan) == 0;
+            bool caught = OtherPosition.Distance(AgentPosition, CellInfo.DistanceType.Manhattan) <= 1;
+
+            bool walkingTowardEnemy = // only when walking toward enemy AND close to enemy
+                state.EnemyDistance == QTableDistances.Close &&
+                (
+                    (state.EnemyIsNorth && action == QTableAction.GoNorth) ||
+                    (state.EnemyIsEast && action == QTableAction.GoEast) ||
+                    (state.EnemyIsSouth && action == QTableAction.GoSouth) ||
+                    (state.EnemyIsWest && action == QTableAction.GoWest)
+                )
+            ;
 
             if (cannotWalk || caught)
                 return largePenaltyScore;
 
+            if (walkingTowardEnemy)
+                return smallPenaltyScore;
+
             QTableState nextState = GetNextState(action);
 
-            if (nextState.EnemyDistance < state.EnemyDistance)
-            {
-                return smallPenaltyScore;
-            }
-            else
             if (nextState.EnemyDistance > state.EnemyDistance && nextState.EnemyDistance == QTableDistances.Far)
-            {
                 return rewardScore;
-            }
 
             return neutralScore;
         }
@@ -306,7 +318,7 @@ namespace QMind
 
         private void MovePlayer()
         {
-            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 512);
+            var path = navigationAlgorithm.GetPath(OtherPosition, AgentPosition, 100);
             if (path != null && path.Length > 0) OtherPosition = path[0];
         }
 

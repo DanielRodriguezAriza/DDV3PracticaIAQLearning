@@ -67,7 +67,7 @@ public class QTable
     public void UpdateQ(QTableState state, QTableState nextState, QTableAction action, float reward, float alpha, float gamma)
     {
         float newQ = Mathf.Lerp(GetQ(state, action), reward + gamma * GetMaxQ(nextState), alpha);
-        Debug.Log($"Updating Q(s,a) = {GetQ(state, action)} with reward {reward}, Q(s,a)' = {newQ}");
+        //Debug.Log($"Updating Q(s,a) = {GetQ(state, action)} with reward {reward}, Q(s,a)' = {newQ}");
         SetQ(state, action, newQ);
     }
 
