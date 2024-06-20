@@ -23,6 +23,7 @@ public class QTable
     {
         this.qTable = new Dictionary<QTableState, QTableReward>();
         this.filePath = $"{Application.dataPath}";
+        //this.filePath = $"{Application.persistentDataPath}";
         this.fileName = filename;
     }
 
@@ -72,7 +73,7 @@ public class QTable
     private void ReadFile()
     {
         string filename = GetFileName();
-        StreamReader reader = new StreamReader(filePath);
+        StreamReader reader = new StreamReader(filename);
 
         string csvLine;
 
